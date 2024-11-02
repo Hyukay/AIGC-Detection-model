@@ -1,23 +1,23 @@
-from tensorflow.keras.applications import ConvNeXtBase
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
+import torch.nn as nn
+from torchvision.models import convnext_base, ConvNeXt_Base_Weights
 
-def create_model(img_size):
-    # Load ConvNeXt with ImageNet weights, excluding the top layers
-    base_model = ConvNeXtBase(weights='imagenet', include_top=False, input_shape=(img_size, img_size, 3))
+class ConvNext(nn.Module):
+    def __init__(self, num_classes=2):
+        """
+        Initializes ConvNeXt with a custom classifier for binary classification.
+        Args:
+            num_classes (int): Number of output classes (default is 2 for real/fake).
+        """
+        super(ConvNext, self).__init__()
+        # Load ConvNeXt base with pre-trained weights
+        self.convnext = convnext_base(weights=ConvNeXt_Base_Weights.IMAGENET1K_V1)
 
-    # Freeze base model layers
-    for layer in base_model.layers:
-        layer.trainable = False
+        # Freeze base layers
+        for param in self.convnext.parameters():
+            param.requires_grad = False
 
-    # Add custom layers
-    x = GlobalAveragePooling2D()(base_model.output)
-    x = Dense(512, activation='relu')(x)
-    x = Dropout(0.5)(x)
-    output = Dense(1, activation='sigmoid')(x)
+        # Replace classifier with custom head
+        self.convnext.classifier[2] = nn.Linear(self.convnext.classifier[2].in_features, num_classes)
 
-    # Create the model
-    model = Model(inputs=base_model.input, outputs=output)
-    model.compile(optimizer=Adam(lr=0.001), loss='binary_crossentropy', metrics=['accuracy'])
-    return model
+    def forward(self, x):
+        return self.convnext(x)

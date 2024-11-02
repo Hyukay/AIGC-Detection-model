@@ -1,11 +1,10 @@
 # config.py
 
-# Image and model parameters
-IMG_SIZE = 512
+IMG_SIZE = 224
 BATCH_SIZE = 32
-EPOCHS = 20
-
-# Directory paths
-TRAIN_DIR = 'data/train'
-VAL_DIR = 'data/val'
-MODEL_SAVE_PATH = 'saved_models/best_model.h5'
+NUM_WORKERS = 4
+EPOCHS = 40
+LEARNING_RATE = 1e-3
+WEIGHT_DECAY = 1e-5
+DATA_DIR = '../Project/data'
+MODEL_SAVE_PATH = 'saved_models/best_model.pth'

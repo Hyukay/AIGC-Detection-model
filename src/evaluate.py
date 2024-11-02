@@ -1,19 +1,25 @@
-from tensorflow.keras.models import load_model
-from data_loader import create_data_generators
+import torch
+from tqdm import tqdm
 
-# Configuration
-val_dir = 'data/val'
-img_size = 512
-batch_size = 32
-model_path = 'saved_models/best_model.h5'
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load the model
-model = load_model(model_path)
+@torch.no_grad()
+def evaluate(model, loader):
+    """
+    Evaluates the model on a DataLoader.
+    Args:
+        model (nn.Module): Model to evaluate
+        loader (DataLoader): DataLoader for validation/test set
+    """
+    model.eval().to(DEVICE)
+    accuracies = []
 
-# Create validation data generator
-_, val_generator = create_data_generators('data/train', val_dir, img_size, batch_size)
+    for images, labels in tqdm(loader, leave=False):
+        images, labels = images.to(DEVICE), labels.to(DEVICE)
+        outputs = model(images)
+        preds = outputs.argmax(dim=1)
+        accuracy = (preds == labels).float().mean().item()
+        accuracies.append(accuracy)
 
-# Evaluate the model
-val_loss, val_acc = model.evaluate(val_generator, steps=val_generator.samples // batch_size)
-print(f'Validation Accuracy: {val_acc * 100:.2f}%')
-
+    avg_accuracy = sum(accuracies) / len(accuracies) if accuracies else 0
+    print(f"Validation/Test Accuracy: {avg_accuracy:.4f}")
